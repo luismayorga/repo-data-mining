@@ -1,6 +1,6 @@
 # nose
 
-FIXME: description
+App to detect the evolution of bad smells over several versions of a Java SVN repository.
 
 ## Installation
 
