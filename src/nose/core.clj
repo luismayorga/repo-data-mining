@@ -6,14 +6,16 @@
            (java.io File)
            (org.tmatesoft.svn.core.wc2 SvnOperationFactory 
                                        SvnTarget)
-           (org.tmatesoft.svn.core.wc SVNRevision)))
+           (org.tmatesoft.svn.core.wc SVNRevision)
+           (org.tmatesoft.svn.core SVNURL)
+           (org.tmatesoft.svn.core.internal.io.fs FSRepositoryFactory)))
 
 (def lang "java")
 
 
 (defn name-xml
   [project rev]
-  (str project "_" rev ".xml"))
+  (str project "_" (str (System/currentTimeMillis)) "_" rev ".xml"))
 
 
 (defn compose-xml-path
@@ -34,29 +36,37 @@
         module-name    (apply 
                          #(nth % (dec (count %)))
                          (vector (clojure.string/split repo-path #"/"))) 
-
         checkout (.createCheckout op-factory)
         revision (SVNRevision/create 0)
-        source (SvnTarget/fromFile
-                 (new File repo-path) revision)
-        target (SvnTarget/fromFile 
-                 (doto 
-                   (File/createTempFile "nose" (System/currentTimeMillis))
-                   .mkdir))]
+        sURL (SVNURL/fromFile (new File repo-path))
+        source (SvnTarget/fromURL sURL revision)
+        tempdir (doto
+                  (File/createTempFile "nose" (str (System/currentTimeMillis)))
+                  .mkdir)
+        target (SvnTarget/fromFile tempdir)]
     (do
       (.setSource checkout source)
-      (.setSingleTarget target) 
+      (.setSingleTarget checkout target) 
+      (FSRepositoryFactory/setup)
+      (prn (.getURL source))
+      (prn (.getURL target))
       (.run checkout)
       (run-infusion infusion-path repo-path (compose-xml-path
                                               xml-output-dir
-                                              (name-xml 
-                                                module-name
-                                                "0")))
+                                              (name-xml module-name "0")))
       (loop [i 1]
-        ;TODO
-        ;change revision
-        ;update
-        ;run infusion
-        )
+        (let [rev (SVNRevision/create i)
+              update (.createUpdate op-factory)
+              target (SvnTarget/fromFile tempdir i)
+              head-revision (.getNumber (SVNRevision/HEAD))]
+          (do
+            (.setSingleTarget update target)
+            (.run update)
+            (run-infusion infusion-path repo-path (compose-xml-path
+                                                    xml-output-dir
+                                                    (name-xml module-name (str i))))
+            (if
+              (< i head-revision)
+              (recur(+ i 1))))))
       (.dispose op-factory))))
 
