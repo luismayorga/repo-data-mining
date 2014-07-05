@@ -5,7 +5,8 @@
   (:import (java.lang System)
            (java.io File)
            (org.tmatesoft.svn.core.wc2 SvnOperationFactory 
-                                       SvnTarget)
+                                       SvnTarget
+                                       SvnUpdate)
            (org.tmatesoft.svn.core.wc SVNRevision)
            (org.tmatesoft.svn.core SVNURL)
            (org.tmatesoft.svn.core.internal.io.fs FSRepositoryFactory)))
@@ -42,14 +43,13 @@
         source (SvnTarget/fromURL sURL revision)
         tempdir (doto
                   (File/createTempFile "nose" (str (System/currentTimeMillis)))
-                  .mkdir)
+                  (.delete)
+                  (.mkdir))
         target (SvnTarget/fromFile tempdir)]
     (do
       (.setSource checkout source)
       (.setSingleTarget checkout target) 
       (FSRepositoryFactory/setup)
-      (prn (.getURL source))
-      (prn (.getURL target))
       (.run checkout)
       (run-infusion infusion-path repo-path (compose-xml-path
                                               xml-output-dir
@@ -57,7 +57,7 @@
       (loop [i 1]
         (let [rev (SVNRevision/create i)
               update (.createUpdate op-factory)
-              target (SvnTarget/fromFile tempdir i)
+              target (SvnTarget/fromFile tempdir rev)
               head-revision (.getNumber (SVNRevision/HEAD))]
           (do
             (.setSingleTarget update target)
