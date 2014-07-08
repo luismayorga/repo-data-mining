@@ -8,9 +8,11 @@
            (org.tmatesoft.svn.core.wc2 SvnOperationFactory 
                                        SvnTarget
                                        SvnUpdate)
-           (org.tmatesoft.svn.core.wc SVNRevision)
+           (org.tmatesoft.svn.core.wc SVNRevision
+                                      SVNClientManager)
            (org.tmatesoft.svn.core.io SVNRepositoryFactory)
-           (org.tmatesoft.svn.core SVNURL)
+           (org.tmatesoft.svn.core SVNURL
+                                   SVNDepth)
            (org.tmatesoft.svn.core.internal.io.fs FSRepositoryFactory)))
 
 
@@ -49,36 +51,62 @@
   (shell/sh infusion-path "-lang" lang "-path" working-copy-path "-hudsonreport" report-file-path))
 
 
+(defn checkout-repo
+  "checkouts repo in a temp dir and returns the path of the working copy"
+  [op-factory sURL rev]
+  (let [revision (SVNRevision/create rev)
+        checkout (.createCheckout op-factory)
+        source (SvnTarget/fromURL sURL revision)
+        tempdir (doto (File/createTempFile "nose" (str (System/currentTimeMillis))) (.delete) (.mkdir))
+        target (SvnTarget/fromFile tempdir)]
+    (.setSource checkout source)
+    (.setSingleTarget checkout target) 
+    (.run checkout)
+    (.getAbsolutePath tempdir)))
+
+
+(defn update-repo
+  "updates repo in path to revision rev"
+  [op-factory repo-path wc-path rev]
+  (let [
+        clientManager (SVNClientManager/newInstance)
+        updateClient (.getUpdateClient clientManager)
+        revision (SVNRevision/create rev)]
+    (.doUpdate updateClient (new File wc-path) revision SVNDepth/INFINITY true true)))
+
+
+(defn clean-repo
+  "deletes repository"
+  [repo-path]
+  (FileUtils/deleteQuietly (new File repo-path)))
+
+
 (defn -main 
   ([infusion-path repo-path xml-output-dir] 
    (-main infusion-path repo-path xml-output-dir nil nil))
   ([infusion-path repo-path xml-output-dir rev-start] 
    (-main infusion-path repo-path xml-output-dir rev-start nil))
   ([infusion-path repo-path xml-output-dir rev-start rev-end] 
+   (FSRepositoryFactory/setup)
    (let [op-factory (new SvnOperationFactory)
          module-name    (#(nth % (dec (count %))) (clojure.string/split repo-path #"/"))
-         sURL (SVNURL/fromFile (new File repo-path))]
-     (FSRepositoryFactory/setup)
-     (let [head-revision (if rev-end (read-string rev-end) (.getLatestRevision (SVNRepositoryFactory/create sURL)))]
-       (loop [i (if rev-start (read-string rev-start) 1)]
-         (let [revision (SVNRevision/create i)
-               checkout (.createCheckout op-factory)
-               source (SvnTarget/fromURL sURL revision)
-               tempdir (doto 
-                         (File/createTempFile "nose" (str (System/currentTimeMillis))) 
-                         (.delete) 
-                         (.mkdir))
-               target (SvnTarget/fromFile tempdir)]
-           (.setSource checkout source)
-           (.setSingleTarget checkout target) 
-           (.run checkout)
-           (run-infusion infusion-path 
-                         (.getAbsolutePath tempdir) 
-                         (compose-xml-path xml-output-dir 
-                                           (name-xml module-name (str i))))
-           (FileUtils/deleteQuietly tempdir)
-           (print-progress-bar i head-revision)
-           (when
-             (< i head-revision)
-             (recur(+ i 1))))))
+         sURL (SVNURL/fromFile (new File repo-path))
+         head-revision (if rev-end (read-string rev-end) (.getLatestRevision (SVNRepositoryFactory/create sURL)))
+         first-revision (if rev-start (read-string rev-start) 1)
+         working-copy (checkout-repo op-factory sURL first-revision)]
+     (print-progress-bar 0 head-revision)
+     (run-infusion infusion-path 
+                   working-copy
+                   (compose-xml-path xml-output-dir (name-xml module-name (str first-revision))))
+     (print-progress-bar first-revision head-revision)
+     (loop [i (+ first-revision 1)]
+       (update-repo op-factory repo-path working-copy i)
+       (run-infusion infusion-path 
+                     working-copy
+                     (compose-xml-path xml-output-dir (name-xml module-name (str i))))
+       (print-progress-bar i head-revision)
+       (when
+         (< i head-revision)
+         (recur(+ i 1))))
+     (clean-repo working-copy)
      (.dispose op-factory))))
