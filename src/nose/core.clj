@@ -107,6 +107,6 @@
        (print-progress-bar i head-revision)
        (when
          (< i head-revision)
-         (recur(+ i 1))))
+         (recur(+ i 5))))
      (clean-repo working-copy)
      (.dispose op-factory))))
