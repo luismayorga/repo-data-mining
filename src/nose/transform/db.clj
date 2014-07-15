@@ -1,4 +1,4 @@
-(ns nose.db
+(ns nose.transform.db
   (:require [clojure.java.jdbc :as jdbc])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
@@ -6,9 +6,9 @@
 (def db-spec
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
-   :subname     "db/smells_evolution.db" })
+   :subname     "./smell_history.db"})
 
-(defn pool
+(defn- pool
   [spec]
   (let [cpds (doto (ComboPooledDataSource.)
                (.setDriverClass (:classname spec)) 

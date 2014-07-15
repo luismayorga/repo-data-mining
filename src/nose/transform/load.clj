@@ -1,12 +1,12 @@
-(ns nose.data.load
-  (:require [nose.db :as db]
+(ns nose.transform.load
+  (:require [nose.transform.db :as db]
             [clojure.zip :as z]
             [clojure.data.zip :as dz]
             [clojure.data.zip.xml :as dzx]
             [clojure.java.jdbc :as jdbc]))
 
 
-(defn store-report [con report]
+(defn- store-report [con report]
   (doseq [entity (dzx/xml-> (z/xml-zip (:xml report)) :entity)]
     (let [entity-keys (jdbc/insert! con 
                                    :entity 

@@ -20,14 +20,8 @@ FIXME: listing of options this app accepts.
 
 ...
 
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2014 FIXME
+### To-do
+* Database
+    + Selection of the one to use
+    + Creation in case it does not exist
+* Improve the messy analysis section

@@ -1,4 +1,4 @@
-(ns nose.data.extract
+(ns nose.transform.extract
   (:require [clojure.xml :as xml]
             [clojure.java.io :as io])
   (:import (java.io File)))
@@ -23,7 +23,7 @@
      :revision (nth (clojure.string/split (nth nom 2) #"\.") 0)}))
 
 
-(defn xml|map [x]
+(defn- xml|map [x]
   (assoc (xml|metadata x)
          :xml (xml/parse x)))
 
