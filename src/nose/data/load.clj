@@ -1,44 +1,31 @@
 (ns nose.data.load
-  (:require [clojure.java.jdbc :as jdbc])
-  (:import com.mchange.v2.c3p0.ComboPooledDataSource))
+  (:require [nose.db :as db]
+            [clojure.zip :as z]
+            [clojure.data.zip :as dz]
+            [clojure.data.zip.xml :as dzx]
+            [clojure.java.jdbc :as jdbc]))
 
 
-(def db-spec
-  {:classname   "org.sqlite.JDBC"
-   :subprotocol "sqlite"
-   :subname     "db/smells_evolution.db" })
+(defn store-report [con report]
+  (doseq [entity (dzx/xml-> (z/xml-zip (:xml report)) :entity)]
+    (let [entity-key (jdbc/insert! con 
+                                   :entity 
+                                   {:system (:system report)
+                                    :rev (:revision report)
+                                    :type (dzx/attr entity :type)
+                                    :name (dzx/attr entity :name)
+                                    :factor (dzx/attr entity :factor)
+                                    :package (dzx/attr entity :package)})]
+      (doseq [flaw (dzx/xml-> entity :designFlaw)]
+        (jdbc/insert! con
+                      :flaw
+                      {:entity_id (first entity-key)
+                      :type (dzx/attr flaw :type) 
+                      :severity (dzx/attr flaw :severity)
+                      :impact (dzx/attr flaw :impact)
+                      :categories (dzx/attr flaw :categories)})))))
 
-(defn pool
-  [spec]
-  (let [cpds (doto (ComboPooledDataSource.)
-               (.setDriverClass (:classname spec)) 
-               (.setJdbcUrl (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
-               (.setUser (:user spec))
-               (.setPassword (:password spec))
-               (.setMaxIdleTimeExcessConnections (* 30 60))
-               (.setMaxIdleTime (* 3 60 60)))] 
-    {:datasource cpds}))
-
-(def pooled-db (delay (pool db-spec)))
-
-(defn db-connection [] @pooled-db)
-
-(defn clean [])
-
-(defn create-db []
-  (jdbc/db-do-commands (db-connection)
-                       (jdbc/create-table-ddl :entity
-                                              [:id :integer]
-                                              [:system :text]
-                                              [:rev :integer]
-                                              [:type :text]
-                                              [:name :text]
-                                              [:factor :text])
-
-                       (jdbc/create-table-ddl :designflaw
-                                              [:id :integer]
-                                              [:entity_id :integer]
-                                              [:type :text]
-                                              [:severity :integer]
-                                              [:impact :float]
-                                              [:categories :text])))
+(defn store-data [reports]
+  (jdbc/with-db-transaction [con (db/db-connection)]
+    (doseq [report reports]
+      (store-report con report))))
