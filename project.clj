@@ -9,8 +9,7 @@
                  [org.tmatesoft.svnkit/svnkit "1.8.3-1"]
                  [org.clojure/data.zip "0.1.1"]
                  [commons-io/commons-io "2.4"]
-                 [com.mchange/c3p0 "0.9.2.1"]
-                 [honeysql "0.4.3"]]
+                 [com.mchange/c3p0 "0.9.2.1"]]
   :main ^:skip-aot nose.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

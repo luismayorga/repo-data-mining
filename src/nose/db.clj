@@ -38,7 +38,7 @@
                                               [:package :text])
 
                        (jdbc/create-table-ddl :flaw
-                                              [:entity_id :text]
+                                              [:entity_id :integer]
                                               [:type :text]
                                               [:severity :integer]
                                               [:impact :float]

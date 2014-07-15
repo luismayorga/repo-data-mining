@@ -8,7 +8,7 @@
 
 (defn store-report [con report]
   (doseq [entity (dzx/xml-> (z/xml-zip (:xml report)) :entity)]
-    (let [entity-key (jdbc/insert! con 
+    (let [entity-keys (jdbc/insert! con 
                                    :entity 
                                    {:system (:system report)
                                     :rev (:revision report)
@@ -19,7 +19,7 @@
       (doseq [flaw (dzx/xml-> entity :designFlaw)]
         (jdbc/insert! con
                       :flaw
-                      {:entity_id (first entity-key)
+                      {:entity_id  ((keyword "last_insert_rowid()") (first entity-keys))
                       :type (dzx/attr flaw :type) 
                       :severity (dzx/attr flaw :severity)
                       :impact (dzx/attr flaw :impact)
