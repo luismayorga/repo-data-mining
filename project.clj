@@ -1,4 +1,4 @@
-(defproject nose "0.1.0-SNAPSHOT"
+(defproject nose "0.1.1-SNAPSHOT"
   :description "App to detect the evolution of bad smells over several versions of a Java SVN repository"
   :url "https://github.com/rapsioux/nose"
   :license {:name "MIT"

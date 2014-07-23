@@ -6,7 +6,7 @@
 (def db-spec
   {:classname   "org.sqlite.JDBC"
    :subprotocol "sqlite"
-   :subname     "./smell_history.db"})
+   :subname     "./smell_history.sqlite"})
 
 (defn- pool
   [spec]
