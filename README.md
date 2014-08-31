@@ -22,7 +22,7 @@ The application has three subcommands:
 - `transform`, which takes a folder that contains the inFusion reports and the database and loads them into it.
 
 ## Result processing
-The results obtained in the database can be processed in order to obtain further information. The paper [TBD](http://) presents study of the bad smells removal within four software repositories.
+The results obtained in the database can be processed in order to obtain further information. The [paper](report.pdf) presents the study of bad smells removals in four software repositories.
 
 The next datasets show the data extracted:
 
