@@ -1,7 +1,8 @@
 (ns nose.analyse.core
   (:gen-class)
   (:require [clojure.java.shell :as shell]
-            [clojure.string])
+            [clojure.string]
+            [clj-progress.core :as prog])
   (:import (java.lang System)
            (java.io File)
            (org.apache.commons.io FileUtils)
@@ -17,18 +18,6 @@
 
 
 (def lang "java")
-
-(defn- print-progress-bar 
-  [current-revision target-revision]
-  (let [percent (* (/ current-revision target-revision) 100)
-        bar (StringBuilder. "[")] 
-    (doseq [i (range 50)]
-      (cond (< i (int (/ percent 2))) (.append bar "=")
-            (= i (int (/ percent 2))) (.append bar ">")
-            :else (.append bar " ")))
-    (.append bar (str "] " percent "%     "))
-    (print "\r" "rev: " (str current-revision "/" target-revision " ") (.toString bar))
-    (flush)))
 
 
 (defn- name-xml
@@ -81,27 +70,25 @@
 
 
 (defn main 
-  [infusion-path repo-path xml-output-dir rev-start rev-end] 
-   (FSRepositoryFactory/setup)
-   (let [op-factory (new SvnOperationFactory)
-         module-name    (#(nth % (dec (count %))) (clojure.string/split repo-path #"/"))
-         sURL (SVNURL/fromFile (new File repo-path))
-         head-revision (if rev-end (read-string rev-end) (.getLatestRevision (SVNRepositoryFactory/create sURL)))
-         first-revision (if rev-start (read-string rev-start) 1)
-         working-copy (checkout-repo op-factory sURL first-revision)]
-     (print-progress-bar 0 head-revision)
-     (run-infusion infusion-path 
-                   working-copy
-                   (compose-xml-path xml-output-dir (name-xml module-name (str first-revision))))
-     (print-progress-bar first-revision head-revision)
-     (loop [i (+ first-revision 1)]
-       (update-repo op-factory repo-path working-copy i)
-       (run-infusion infusion-path 
-                     working-copy
-                     (compose-xml-path xml-output-dir (name-xml module-name (str i))))
-       (print-progress-bar i head-revision)
-       (when
-         (< i head-revision)
-         (recur(+ i 5))))
-     (clean-repo working-copy)
-     (.dispose op-factory)))
+  [infusion-path repo-path xml-output-dir rev-start rev-end step] 
+  (prog/init (/ (- rev-end rev-start) step))
+  (FSRepositoryFactory/setup)
+  (let [op-factory (new SvnOperationFactory)
+        module-name    (#(nth % (dec (count %))) (clojure.string/split repo-path #"/"))
+        sURL (SVNURL/fromFile (new File repo-path))
+        head-revision (if (= rev-end -1) (.getLatestRevision (SVNRepositoryFactory/create sURL) rev-end))
+        working-copy (checkout-repo op-factory sURL rev-start)]
+
+    (run-infusion infusion-path 
+                  working-copy
+                  (compose-xml-path xml-output-dir (name-xml module-name (str rev-start))))
+    (prog/tick)
+    (doseq [i (range rev-start rev-end step)]
+      (update-repo op-factory repo-path working-copy i)
+      (run-infusion infusion-path 
+                    working-copy
+                    (compose-xml-path xml-output-dir (name-xml module-name (str i))))
+      (prog/tick)
+      (prog/done)
+      (clean-repo working-copy)
+      (.dispose op-factory))))

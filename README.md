@@ -4,22 +4,25 @@ App to detect the evolution of bad smells over several versions of a Java SVN re
 
 ## Installation
 
-Download the latest version of the jar from the [tags section](https://github.com/rapsioux/nose/releases) of this repository.
+The application can be used with leiningen by checking out this repository or the latest version of a standalone jar can be downloaded from the [tags section](https://github.com/rapsioux/nose/releases) of this repository.
+
+It can be launched by using `java -jar`.
 
 
 ## Usage
 
 The application has three subcommands:
 
-- `db`, which manages the database. At this moment it only accepts another subcommand, `create`, that takes as an argument the name of the database to be created.
+- `db`, which manages the database. At this moment it only accepts another subcommand, `create`, which creates a database called `smell_history.sqlite` in the work directory.
 
-- `analyse`, which runs inFusion for a project and takes two arguments. The first one is the location of the inFusionC executable and the second one is the location of a working copy to be analysed.
+- `analyse`, which runs inFusion for a project and takes three arguments. The first one is the location of the inFusionC executable, which bundles with inFusion. In the OS X application it can be found inside it, in `inFusion.app/Contents/MacOS/inFusionC`.  The second one is the location of a svn repository containing the project to be analysed. The third one is an existing folder where the xml reports will be created.
     
     There are two options available:
     + `-f` or `--first-revision` that specifies the starting revision. The default value is 0.
     + `-l` or `--last-revision` that specifies the last revision. The default value is the max revision of the repository.
+    + `-s` or `--step` that specifies how continuos the revisions are. Will iterate over the repository using such increments. The default value is `1`.
 
-- `transform`, which takes a folder that contains the inFusion reports and the database and loads them into it.
+- `transform`, which takes a folder that contains the inFusion reports and loads them into the database.
 
 ## Result processing
 The results obtained in the database can be processed in order to obtain further information. The [paper](report.pdf) presents the study of bad smells removals in four software repositories.

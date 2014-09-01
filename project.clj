@@ -10,6 +10,7 @@
                  [org.xerial/sqlite-jdbc "3.7.15-M1"]
                  [org.tmatesoft.svnkit/svnkit "1.8.3-1"]
                  [commons-io/commons-io "2.4"]
+                 [intervox/clj-progress "0.1.1"]
                  [com.mchange/c3p0 "0.9.2.1"]]
   :main ^:skip-aot nose.core
   :target-path "target/%s"
