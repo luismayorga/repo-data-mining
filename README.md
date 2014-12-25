@@ -1,6 +1,8 @@
 # nose
 
-App to detect the evolution of bad smells over several versions of a Java SVN repository.
+Nose is a tool to detect the evolution of bad smells over several versions of a Java SVN repository. It is just a Clojure program that automates the task by running [inFusion](http://www.intooitus.com/products/infusion) over the specified versions of the project and stores the results in a serverless database for its study. The motivation and the results obtained can be found in the [report](report.pdf). 
+
+If you want a quick overview, you can have a look at the [presentation](https://speakerdeck.com/rapsioux/bad-smell-removal-recipes-from-repository-mining) given by [Javier Pérez](https://github.com/javipeg) at the [Belgium and Netherlands software evolution workshop](http://benevol.cwi.nl/2014/).
 
 ## Installation
 
